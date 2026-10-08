@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PersonaX — Personality Test</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(135deg,#f4efff,#eef7ff);color:#202124}
+.container{max-width:720px;margin:auto;padding:28px 18px 50px}.card{background:#fff;border-radius:24px;padding:28px;box-shadow:0 12px 40px #00000012}
+h1{font-size:38px;margin:0 0 8px}.sub{color:#666;margin:0 0 24px}.progress{height:8px;background:#eee;border-radius:99px;overflow:hidden;margin:18px 0 28px}.bar{height:100%;width:0;background:#7357ff;transition:.25s}
+.question{font-size:23px;font-weight:700;margin-bottom:18px}.answers{display:grid;gap:12px}.answer{border:2px solid #e7e7e7;background:#fff;border-radius:15px;padding:16px;text-align:left;font-size:16px;cursor:pointer;transition:.15s}.answer:hover{border-color:#7357ff;background:#f8f6ff}
+button{border:0;border-radius:14px;padding:14px 20px;background:#7357ff;color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px}.hidden{display:none}.result{text-align:center}.type{font-size:48px;font-weight:900;color:#7357ff;margin:8px}.tag{display:inline-block;background:#f0ecff;color:#5d43df;border-radius:99px;padding:7px 12px;font-weight:700}.report{text-align:left;background:#fafafa;border-radius:18px;padding:20px;margin-top:20px}.small{font-size:13px;color:#777;line-height:1.5}.restart{background:#222}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card" id="start">
+    <h1>🧠 PersonaX</h1>
+    <p class="sub">24 асуултаар өөрийн personality-ийн хэв маягийг сонирхоод үз.</p>
+    <p>Энэ бол зугаа болон өөрийгөө танин мэдэх зориулалттай тест. Эмнэлгийн болон сэтгэлзүйн онош биш.</p>
+    <button onclick="startTest()" type="button">Тестээ эхлүүлэх →</button>
+  </div>
+
+  <div class="card hidden" id="quiz">
+    <div id="count"></div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="question" id="question"></div>
+    <div class="answers" id="answers"></div>
+  </div>
+
+  <div class="card hidden result" id="result">
+    <div>Чиний personality type:</div>
+    <div class="type" id="type"></div>
+    <div class="tag" id="name"></div>
+    <div class="report" id="report"></div>
+    <button class="restart" onclick="location.reload()">Дахин хийх</button>
+  </div>
+</div>
+
+<script>
+const questions=[
+["Шинэ хүмүүстэй уулзахад чи ихэвчлэн?","E","I","E талдаа","I талдаа"],
+["Чөлөөт цагаараа чи?","E","I","Хүмүүстэй хамт байх","Ганцаараа тайван байх"],
+["Санаагаа ойлгуулахдаа чи?","E","I","Ярьж байгаад боддог","Эхлээд бодож байгаад ярьдаг"],
+["Олон хүнтэй газар чи?","E","I","Эрч хүч авдаг","Хурдан ядардаг"],
+["Шинэ зүйл сурахдаа чи?","S","N","Бодит жишээ хүсдэг","Ерөнхий санаа, боломж сонирхдог"],
+["Даалгавар хийхдээ чи?","S","N","Алхам алхмаар явдаг","Өөрийн арга замыг олдог"],
+["Юуг илүү анзаардаг вэ?","S","N","Одоо болж буй бодит зүйл","Цаашдын боломж"],
+["Тайлбар сонсохдоо чи?","S","N","Баримт, жишээ чухал","Утга, санаа чухал"],
+["Шийдвэр гаргахдаа чи?","T","F","Логикт тулгуурладаг","Хүмүүст хэрхэн нөлөөлөхийг боддог"],
+["Маргаан гарвал чи?","T","F","Юу зөвийг тогтоохыг хүсдэг","Хоёр талын мэдрэмжийг боддог"],
+["Сонголт хийхдээ?","T","F","Давуу/сул талыг харьцуулдаг","Зүрх сэтгэлдээ ойрийг сонгодог"],
+["Хэн нэгэн асуудлаа ярихад?","T","F","Шийдэл санал болгодог","Эхлээд сонсож дэмждэг"],
+["Аялал төлөвлөхдөө?","J","P","Урьдчилж төлөвлөдөг","Тухайн үедээ шийддэг"],
+["Хугацаа ойртоход?","J","P","Эрт дуусгахыг хүсдэг","Сүүлд төвлөрөөд хийдэг"],
+["Өдөр тутамдаа?","J","P","Тодорхой хуваарьтай байх дуртай","Уян хатан байх дуртай"],
+["Гэнэтийн өөрчлөлт гарвал?","J","P","Төлөвлөгөө эвдэгдэх дургүй","Амархан зохицдог"],
+["Найзуудтайгаа байхдаа?","E","I","Яриа эхлүүлэх нь элбэг","Бусдыг ажиглаж байгаад оролцдог"],
+["Өөрийн санаагаа?","E","I","Шууд хуваалцдаг","Дотроо боловсруулдаг"],
+["Ирээдүйгээ төсөөлөхдөө?","S","N","Бодит боломжийг тооцдог","Олон хувилбар төсөөлдөг"],
+["Ном/кинонд?","S","N","Бодит, ойлгомжтой үйл явдал таалагддаг","Далд санаа, бэлгэдэл сонирхдог"],
+["Шүүмж сонсоход?","T","F","Юу нь зөв бурууг хардаг","Яаж хэлснийг бас анзаардаг"],
+["Бусдад зөвлөгөө өгөхдөө?","T","F","Шууд, бодит зөвлөгөө өгдөг","Нөхцөл байдлыг нь ойлгож өгдөг"],
+["Ажлаа эхлэхдээ?","J","P","Эхлээд төлөвлөгөө гаргадаг","Эхлээд эхлүүлээд явцдаа шийддэг"],
+["Өдрийн төгсгөлд?","J","P","Хийх зүйлсээ дуусгасан байвал сэтгэл амар","Маргаашийн боломжоо нээлттэй үлдээх дуртай"]
+];
+
+let i=0, score={E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
+
+function startTest(){
+ document.getElementById("start").classList.add("hidden");
+ document.getElementById("quiz").classList.remove("hidden");
+ show();
+}
+function show(){
+ const q=questions[i];
+ document.getElementById("count").textContent=`${i+1} / ${questions.length}`;
+ document.getElementById("bar").style.width=((i)/questions.length*100)+"%";
+ document.getElementById("question").textContent=q[0];
+ const a=document.getElementById("answers"); a.innerHTML="";
+ [[q[1],q[3]],[q[2],q[4]]].forEach(x=>{
+   const b=document.createElement("button"); b.className="answer"; b.textContent=x[1];
+   b.onclick=()=>{score[x[0]]++;i++;if(i<questions.length){show()}else{finish()}}; a.appendChild(b);
+ });
+}
+const info={
+INTJ:["Стратег","Чи зорилгоо урьдчилан бодож, системтэйгээр асуудал шийдэх хандлагатай."],
+INTP:["Судлаач","Чи санаа, логик, шинэ боломжийг гүнзгий сонирхох хандлагатай."],
+ENTJ:["Удирдагч","Чи зорилго тодорхойлж, хүмүүс ба нөөцийг зохион байгуулах хандлагатай."],
+ENTP:["Санаачлагч","Чи шинэ санаа, маргаан, боломжийг турших дуртай."],
+INFJ:["Зөн совинт зөвлөх","Чи утга учир, хүмүүсийн дотоод сэдлийг ойлгохыг эрмэлздэг."],
+INFP:["Үнэт зүйлт мөрөөдөгч","Чи өөрийн үнэт зүйл болон утга учрыг чухалчилдаг."],
+ENFJ:["Холбогч","Чи хүмүүсийг ойлгож, урамшуулж, хамтдаа зорилгод хүрэхийг хүсдэг."],
+ENFP:["Шинийг санаачлагч","Чи боломж, шинэ санаа, хүмүүстэй холбоо тогтоохыг сонирхдог."],
+ISTJ:["Зохион байгуулагч","Чи хариуцлага, баримт, найдвартай байдлыг чухалчилдаг."],
+ISFJ:["Дэмжигч","Чи анхааралтай, найдвартай бөгөөд бусдад туслахыг чухалчилдаг."],
+ESTJ:["Зохицуулагч","Чи тодорхой дүрэм, зорилго, үр дүнг эрхэмлэдэг."],
+ESFJ:["Хамтрагч","Чи хүмүүсийн хэрэгцээг анзаарч, эв нэгдлийг чухалчилдаг."],
+ISTP:["Практик шийдэгч","Чи асуудлыг бодитоор туршиж, хурдан шийдэл олох хандлагатай."],
+ISFP:["Мэдрэмжтэй бүтээгч","Чи өөрийн мэдрэмж, туршлага, бүтээлч байдлыг эрхэмлэдэг."],
+ESTP:["Адал явдалт шийдэгч","Чи хурдан үйлдэл хийж, бодит нөхцөлд зохицох чадвартай."],
+ESFP:["Эрч хүчтэй оролцогч","Чи туршлага, хүмүүс, хөгжилтэй мөчүүдийг эрхэмлэдэг."]
+};
+function finish(){
+ let type=["E/I","S/N","T/F","J/P"].map(pair=>{let [a,b]=pair.split("/");return score[a]>=score[b]?a:b}).join("");
+ document.getElementById("quiz").classList.add("hidden");
+ document.getElementById("result").classList.remove("hidden");
+ document.getElementById("bar").style.width="100%";
+ document.getElementById("type").textContent=type;
+ document.getElementById("name").textContent=info[type][0];
+ document.getElementById("report").innerHTML=`<h3>${info[type][0]}</h3><p>${info[type][1]}</p><p><b>Дараагийн хувилбарт:</b> илүү дэлгэрэнгүй report, personality compatibility болон төлбөртэй тайлан нэмэх боломжтой.</p><p class="small">Анхаарах: Энэ тест нь зугаа болон өөрийгөө танин мэдэх зориулалттай. Албан ёсны сэтгэлзүйн оношилгоо биш.</p>`;
+}
+</script>
+</body>
+</html>
